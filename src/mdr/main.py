@@ -4,6 +4,7 @@ async def main(page: ft.Page):
     page.title = "Markdown Reader"
     page.theme_mode = ft.ThemeMode.DARK
     page.scroll = ft.ScrollMode.AUTO
+    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
     async def open_file(e):
         # In modern Flet pattern, FilePicker can be created directly in the handler
@@ -62,6 +63,12 @@ async def main(page: ft.Page):
         on_tap_link=on_tap_link,
     )
 
+    centered_md_view = ft.Container(
+        content=md_view,
+        width=800,
+        alignment=ft.Alignment(0, -1),
+    )
+
     page.appbar = ft.AppBar(
         title=ft.Text("Markdown Reader"),
         actions=[
@@ -74,7 +81,7 @@ async def main(page: ft.Page):
         ],
     )
 
-    page.add(md_view)
+    page.add(centered_md_view)
     page.update()
 
 if __name__ == "__main__":
