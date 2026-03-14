@@ -49,6 +49,12 @@ async def main(page: ft.Page):
     async def on_tap_link(e: ft.MarkdownTapLinkEvent):
         page.launch_url(e.url)
 
+    async def on_keyboard(e: ft.KeyboardEvent):
+        if e.ctrl and e.key.lower() == "o":
+            await open_file(None)
+
+    page.on_keyboard_event = on_keyboard
+
     md_view = ft.Markdown(
         value="# Welcome to Markdown Reader\nSelect a markdown file to view its content.",
         selectable=True,
@@ -76,6 +82,7 @@ async def main(page: ft.Page):
                     ft.MenuItemButton(
                         content=ft.Text("Open"),
                         leading=ft.Icon(ft.Icons.FILE_OPEN),
+                        trailing=ft.Text("Ctrl+O"),
                         on_click=open_file,
                     ),
                 ],
