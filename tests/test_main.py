@@ -24,10 +24,18 @@ async def test_page_initialization():
             assert page.theme_mode == ft.ThemeMode.DARK
             
             # Verify UI components presence
-            assert len(page.controls) > 0
-            assert isinstance(page.controls[0], ft.Markdown)
-            assert page.appbar is not None
-            assert page.appbar.title.value == "Markdown Reader"
+            assert len(page.controls) >= 2
+            menu_bar = next(c for c in page.controls if isinstance(c, ft.MenuBar))
+            assert menu_bar is not None
+            assert len(menu_bar.controls) == 2
+            assert menu_bar.controls[0].content.value == "File"
+            assert menu_bar.controls[1].content.value == "Themes"
+            
+            assert any(
+                (isinstance(c, ft.Container) and isinstance(c.content, ft.Markdown)) or
+                (isinstance(c, ft.Column) and any(isinstance(sc, ft.Container) and isinstance(sc.content, ft.Markdown) for sc in c.controls))
+                for c in page.controls
+            )
             
             # FilePicker is NOT in overlay anymore by default in initialization
             # It's created on-demand in open_file
@@ -57,25 +65,38 @@ async def test_theme_toggle():
             # Initial state should be DARK
             assert page.theme_mode == ft.ThemeMode.DARK
             
-            # Find the toggle button
-            toggle_btn = None
-            for action in page.appbar.actions:
-                if isinstance(action, ft.IconButton) and action.tooltip == "Toggle Light/Dark Mode":
-                    toggle_btn = action
+            # Find the Themes submenu
+            menu_bar = next(c for c in page.controls if isinstance(c, ft.MenuBar))
+            themes_menu = None
+            for control in menu_bar.controls:
+                if isinstance(control, ft.SubmenuButton) and control.content.value == "Themes":
+                    themes_menu = control
                     break
             
-            assert toggle_btn is not None
+            assert themes_menu is not None
             
-            # Trigger toggle
-            toggle_theme_coro = toggle_btn.on_click(None)
-            if asyncio.iscoroutine(toggle_theme_coro):
-                await toggle_theme_coro
+            # Find Light and Dark menu items
+            light_btn = None
+            dark_btn = None
+            for item in themes_menu.controls:
+                if isinstance(item, ft.MenuItemButton) and item.content.value == "Light":
+                    light_btn = item
+                if isinstance(item, ft.MenuItemButton) and item.content.value == "Dark":
+                    dark_btn = item
+            
+            assert light_btn is not None
+            assert dark_btn is not None
+            
+            # Trigger Light mode
+            toggle_coro = light_btn.on_click(None)
+            if asyncio.iscoroutine(toggle_coro):
+                await toggle_coro
             assert page.theme_mode == ft.ThemeMode.LIGHT
             
-            # Trigger toggle again
-            toggle_theme_coro = toggle_btn.on_click(None)
-            if asyncio.iscoroutine(toggle_theme_coro):
-                await toggle_theme_coro
+            # Trigger Dark mode
+            toggle_coro = dark_btn.on_click(None)
+            if asyncio.iscoroutine(toggle_coro):
+                await toggle_coro
             assert page.theme_mode == ft.ThemeMode.DARK
         except Exception as ex:
             errors.append(ex)

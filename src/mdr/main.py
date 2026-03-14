@@ -4,7 +4,7 @@ async def main(page: ft.Page):
     page.title = "Markdown Reader"
     page.theme_mode = ft.ThemeMode.DARK
     page.scroll = ft.ScrollMode.AUTO
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    page.horizontal_alignment = ft.CrossAxisAlignment.STRETCH
 
     async def open_file(e):
         # In modern Flet pattern, FilePicker can be created directly in the handler
@@ -38,23 +38,16 @@ async def main(page: ft.Page):
             page.snack_bar.open = True
             page.update()
 
-    async def toggle_theme(e):
-        if page.theme_mode == ft.ThemeMode.DARK:
-            page.theme_mode = ft.ThemeMode.LIGHT
-            toggle_btn.icon = ft.Icons.DARK_MODE
-        else:
-            page.theme_mode = ft.ThemeMode.DARK
-            toggle_btn.icon = ft.Icons.LIGHT_MODE
+    async def set_light_mode(e):
+        page.theme_mode = ft.ThemeMode.LIGHT
+        page.update()
+
+    async def set_dark_mode(e):
+        page.theme_mode = ft.ThemeMode.DARK
         page.update()
 
     async def on_tap_link(e: ft.MarkdownTapLinkEvent):
         page.launch_url(e.url)
-
-    toggle_btn = ft.IconButton(
-        icon=ft.Icons.LIGHT_MODE,
-        on_click=toggle_theme,
-        tooltip="Toggle Light/Dark Mode",
-    )
 
     md_view = ft.Markdown(
         value="# Welcome to Markdown Reader\nSelect a markdown file to view its content.",
@@ -67,21 +60,45 @@ async def main(page: ft.Page):
         content=md_view,
         width=800,
         alignment=ft.Alignment(0, -1),
+        padding=ft.Padding(20, 20, 20, 20),
     )
 
-    page.appbar = ft.AppBar(
-        title=ft.Text("Markdown Reader"),
-        actions=[
-            toggle_btn,
-            ft.IconButton(
-                icon=ft.Icons.FILE_OPEN,
-                on_click=open_file,
-                tooltip="Open Markdown File",
+    centered_md_view_wrapper = ft.Column(
+        controls=[centered_md_view],
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+    )
+
+    menu_bar = ft.MenuBar(
+        controls=[
+            ft.SubmenuButton(
+                content=ft.Text("File"),
+                controls=[
+                    ft.MenuItemButton(
+                        content=ft.Text("Open"),
+                        leading=ft.Icon(ft.Icons.FILE_OPEN),
+                        on_click=open_file,
+                    ),
+                ],
+            ),
+            ft.SubmenuButton(
+                content=ft.Text("Themes"),
+                controls=[
+                    ft.MenuItemButton(
+                        content=ft.Text("Light"),
+                        leading=ft.Icon(ft.Icons.LIGHT_MODE),
+                        on_click=set_light_mode,
+                    ),
+                    ft.MenuItemButton(
+                        content=ft.Text("Dark"),
+                        leading=ft.Icon(ft.Icons.DARK_MODE),
+                        on_click=set_dark_mode,
+                    ),
+                ],
             ),
         ],
     )
 
-    page.add(centered_md_view)
+    page.add(menu_bar, centered_md_view_wrapper)
     page.update()
 
 if __name__ == "__main__":
