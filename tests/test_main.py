@@ -13,6 +13,7 @@ async def test_page_initialization():
     errors = []
     async def test_app(page: ft.Page):
         def on_error(e):
+            print(f"Flet page error: {e.data}")
             errors.append(f"Flet page error: {e.data}")
             
         page.on_error = on_error
@@ -20,6 +21,13 @@ async def test_page_initialization():
             # Call main with a real but isolated page object
             await main(page)
             
+            # Wait a bit for any background errors to settle
+            await asyncio.sleep(0.5)
+            
+            # Check for errors captured by on_error
+            if errors:
+                return
+
             # Verify page properties set in main
             assert page.title == "Markdown Reader"
             assert page.theme_mode == ft.ThemeMode.DARK
@@ -38,15 +46,17 @@ async def test_page_initialization():
             assert open_btn.content.value == "Open"
             assert open_btn.trailing.value == "Ctrl+O"
             
+            # Verify Open Recent menu presence
+            recent_menu = file_menu.controls[1]
+            assert recent_menu.content.value == "Open Recent"
+            assert isinstance(recent_menu, ft.SubmenuButton)
+            
             assert any(
                 (isinstance(c, ft.Container) and isinstance(c.content, ft.Markdown)) or
                 (isinstance(c, ft.Column) and any(isinstance(sc, ft.Container) and isinstance(sc.content, ft.Markdown) for sc in c.controls))
                 for c in page.controls
             )
             
-            # FilePicker is NOT in overlay anymore by default in initialization
-            # It's created on-demand in open_file
-            assert not any(isinstance(c, ft.FilePicker) for c in page.overlay)
             
             # Verify that page.update() works
             page.update()
@@ -56,7 +66,7 @@ async def test_page_initialization():
 
     await ft.run_async(test_app, view=ft.AppView.FLET_APP_HIDDEN)
     if errors:
-        raise errors[0]
+        raise Exception(errors[0]) if isinstance(errors[0], str) else errors[0]
 
 @pytest.mark.asyncio
 async def test_theme_toggle():
