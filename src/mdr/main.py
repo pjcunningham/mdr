@@ -14,6 +14,7 @@ async def main(page: ft.Page):
     page.horizontal_alignment = ft.CrossAxisAlignment.STRETCH
     page.padding = 0
     page.spacing = 0
+    page.bgcolor = ft.Colors.SURFACE
 
     current_file_path = None
     recent_files_path = None
@@ -22,6 +23,19 @@ async def main(page: ft.Page):
         value=DEFAULT_MARKDOWN,
         selectable=True,
         extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
+    )
+
+    def get_reader_width(page_width) -> int:
+        if not page_width:
+            return 900
+        return max(320, min(1000, int(page_width * 0.9)))
+
+    reader_container = ft.Container(
+        content=md_view,
+        width=get_reader_width(page.width),
+        padding=ft.Padding.symmetric(horizontal=24, vertical=20),
+        bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
+        border_radius=12,
     )
 
     recent_submenu = ft.SubmenuButton(
@@ -201,6 +215,10 @@ async def main(page: ft.Page):
             elif key == "r":
                 await reload_file(None)
 
+    def on_resize(e):
+        reader_container.width = get_reader_width(page.width)
+        page.update()
+
     md_view.on_tap_link = on_tap_link
 
     menu_bar = ft.MenuBar(
@@ -244,17 +262,15 @@ async def main(page: ft.Page):
     scrollable_content = ft.Column(
         controls=[
             ft.Container(
-                content=ft.Container(
-                    content=md_view,
-                    width=800,
-                    padding=20,
-                ),
+                content=reader_container,
                 alignment=ft.Alignment(0, -1),
                 expand=True,
+                padding=ft.Padding.symmetric(horizontal=16, vertical=16),
             )
         ],
         scroll=ft.ScrollMode.AUTO,
         expand=True,
+        spacing=0,
     )
 
     page.add(
@@ -263,6 +279,7 @@ async def main(page: ft.Page):
         scrollable_content,
     )
     page.on_keyboard_event = on_keyboard
+    page.on_resized = on_resize
 
     await init_storage()
     await update_recent_menu()
